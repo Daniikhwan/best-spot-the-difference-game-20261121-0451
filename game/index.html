@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='14' cy='14' r='9' fill='none' stroke='%23ffd54f' stroke-width='4'/%3E%3Cline x1='21' y1='21' x2='29' y2='29' stroke='%23ffd54f' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<title>Cari Bedanya! — Petualangan Nusantara</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #10101f;
+    color: #f5f5f5;
+    font-family: 'Trebuchet MS', Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+  }
+  .wrap { width: 1280px; max-width: 100vw; padding: 12px 16px 20px; }
+  header { text-align: center; margin-bottom: 10px; }
+  header h1 {
+    font-size: 34px; letter-spacing: 1px; color: #ffd54f;
+    text-shadow: 0 2px 0 #7a4a00, 0 4px 14px rgba(0,0,0,0.6);
+  }
+  header p { color: #b0bec5; font-size: 14px; margin-top: 2px; }
+  .hud {
+    display: flex; gap: 10px; align-items: stretch; margin-bottom: 10px;
+  }
+  .hud .box {
+    background: #1c1c34; border: 1px solid #33335c; border-radius: 10px;
+    padding: 8px 14px; font-size: 15px; font-weight: bold;
+    display: flex; align-items: center; white-space: nowrap;
+  }
+  .hud .box.grow { flex: 1; justify-content: center; }
+  #hud-level { color: #80d8ff; }
+  #hud-counter { color: #69f0ae; }
+  #hud-score { color: #ffd54f; }
+  .timer-box { flex: 2; display: flex; align-items: center; gap: 10px; }
+  #timer-bar {
+    flex: 1; height: 14px; background: #2a2a44; border-radius: 7px; overflow: hidden;
+  }
+  #timer-fill {
+    height: 100%; width: 100%; background: #69f0ae; border-radius: 7px;
+    transition: width 0.2s linear;
+  }
+  #timer-fill.danger { background: #ff5252; animation: blink 0.5s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0.55; } }
+  .btn {
+    background: #3949ab; color: #fff; border: none; border-radius: 10px;
+    padding: 8px 14px; font-size: 15px; font-weight: bold; cursor: pointer;
+    font-family: inherit;
+  }
+  .btn:hover { background: #4a5ac2; }
+  .btn.gold { background: #f9a825; color: #3e2723; }
+  .btn.gold:hover { background: #ffb300; }
+  .stage { position: relative; }
+  .panels { display: flex; gap: 16px; justify-content: center; }
+  .panel { text-align: center; }
+  .panel .tag {
+    display: inline-block; background: #1c1c34; border: 1px solid #33335c;
+    border-radius: 8px; padding: 4px 14px; font-size: 13px; font-weight: bold;
+    color: #b0bec5; margin-bottom: 6px;
+  }
+  .panel canvas {
+    width: 600px; height: 440px; max-width: 48vw;
+    border-radius: 12px; border: 3px solid #33335c;
+    background: #000; cursor: crosshair; display: block;
+  }
+  .panel canvas:hover { border-color: #ffd54f; }
+  #toast {
+    position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%) scale(0.9);
+    background: rgba(16, 16, 31, 0.92); border: 2px solid #ffd54f; color: #ffd54f;
+    font-size: 20px; font-weight: bold; padding: 10px 22px; border-radius: 12px;
+    opacity: 0; pointer-events: none; transition: opacity 0.15s, transform 0.15s;
+    z-index: 5; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .overlay {
+    position: absolute; inset: 0; z-index: 10;
+    background: rgba(10, 10, 26, 0.88); border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    text-align: center; padding: 12px 24px; backdrop-filter: blur(2px);
+    overflow-y: auto;
+  }
+  .overlay.hidden { display: none; }
+  .overlay h2 { font-size: 30px; color: #ffd54f; margin-bottom: 4px; }
+  .overlay p { font-size: 15px; color: #cfd8dc; max-width: 620px; line-height: 1.45; }
+  .overlay .stars { font-size: 44px; color: #ffd54f; letter-spacing: 6px; margin: 10px 0; }
+  .overlay .big { font-size: 20px; color: #fff; margin: 8px 0 16px; }
+  .overlay .btn { font-size: 18px; padding: 12px 26px; margin-top: 12px; }
+  .level-list { display: flex; flex-direction: column; gap: 5px; margin: 10px 0 4px; width: 460px; max-width: 92%; }
+  .level-btn {
+    background: #1c1c34; border: 2px solid #3949ab; color: #fff; border-radius: 10px;
+    padding: 6px 14px; cursor: pointer; text-align: left; font-family: inherit;
+  }
+  .level-btn:hover { border-color: #ffd54f; background: #26264a; }
+  .level-btn b { display: block; font-size: 16px; }
+  .level-btn span { font-size: 12px; color: #b0bec5; }
+  .howto { font-size: 13px; color: #90a4ae; margin-top: 10px; line-height: 1.5; }
+  .howto b { color: #ffd54f; }
+  footer { text-align: center; color: #78909c; font-size: 13px; margin-top: 12px; }
+  footer b { color: #b0bec5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>CARI BEDANYA!</h1>
+    <p>Petualangan Nusantara — dua gambar hampir sama, temukan semua perbedaannya sebelum waktu habis.</p>
+  </header>
+
+  <div class="hud">
+    <div class="box" id="hud-level">Level 1 · Kebun Pagi</div>
+    <div class="box timer-box">
+      <span id="timer-text">90 dtk</span>
+      <div id="timer-bar"><div id="timer-fill"></div></div>
+    </div>
+    <div class="box" id="hud-counter">Ditemukan 0/5</div>
+    <div class="box" id="hud-score">Skor 0</div>
+    <div class="box" id="hud-hints">Petunjuk 3/3</div>
+    <button class="btn gold" id="btn-hint" title="Petunjuk (H)">Petunjuk</button>
+    <button class="btn" id="btn-mute" title="Suara (M)">Suara: Hidup</button>
+    <button class="btn" id="btn-menu" title="Menu (Esc)">Menu</button>
+  </div>
+
+  <div class="stage">
+    <div class="panels">
+      <div class="panel">
+        <span class="tag">Gambar A — Asli</span>
+        <canvas id="panel-left" width="1200" height="880"></canvas>
+      </div>
+      <div class="panel">
+        <span class="tag">Gambar B — Ada yang beda!</span>
+        <canvas id="panel-right" width="1200" height="880"></canvas>
+      </div>
+    </div>
+    <div id="toast"></div>
+
+    <div class="overlay" id="overlay-menu">
+      <h2>CARI BEDANYA!</h2>
+      <p>Lima adegan asli Indonesia. Bandingkan Gambar A dan Gambar B,
+      klik setiap perbedaan yang kamu temukan — klik yang salah mengurangi 3 detik!</p>
+      <div class="level-list" id="level-buttons"></div>
+      <button class="btn gold" id="btn-start">Mulai dari Level 1</button>
+      <p class="howto"><b>Cara main:</b> klik perbedaan di gambar kiri atau kanan · <b>H</b> petunjuk · <b>M</b> suara · <b>Esc</b> menu</p>
+    </div>
+
+    <div class="overlay hidden" id="overlay-done">
+      <h2 id="done-title">Level Selesai!</h2>
+      <div class="stars" id="done-stars">★★★</div>
+      <p class="big" id="done-detail"></p>
+      <button class="btn gold" id="btn-next">Level Berikutnya →</button>
+    </div>
+
+    <div class="overlay hidden" id="overlay-over">
+      <h2>Waktu Habis!</h2>
+      <p class="big" id="over-detail"></p>
+      <button class="btn gold" id="btn-retry">Coba Lagi</button>
+      <button class="btn" id="btn-over-menu">Pilih Level</button>
+    </div>
+
+    <div class="overlay hidden" id="overlay-final">
+      <h2>Petualangan Selesai!</h2>
+      <div class="stars" id="final-stars"></div>
+      <p class="big" id="final-score"></p>
+      <button class="btn gold" id="btn-again">Main Lagi dari Level 1</button>
+      <button class="btn" id="btn-final-menu">Pilih Level</button>
+    </div>
+  </div>
+
+  <footer>Klik perbedaan di gambar kiri atau kanan · <b>H</b> petunjuk · <b>M</b> suara ·
+  <b>Esc</b> menu · Dibuat untuk make.fun — semua gambar digambar dari kode, tanpa aset luar.</footer>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
